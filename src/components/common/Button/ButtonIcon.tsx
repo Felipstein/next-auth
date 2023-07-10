@@ -1,24 +1,22 @@
 import { forwardRef } from "react";
-import { Slot, SlotProps } from '@radix-ui/react-slot';
-import { w } from "@/utils/w";
+import { SlotProps } from '@radix-ui/react-slot';
+import { ButtonIconClientSide } from "./ButtonIconClientSide";
+import { ButtonIconServerSide } from "./ButtonServerSideIcon";
 
-export interface ButtonIconProps extends SlotProps {}
+export interface ButtonIconProps extends SlotProps {
+  loader?: boolean,
+}
 
-export const ButtonIcon = forwardRef<HTMLElement, SlotProps>((
-  { className, ...props }: ButtonIconProps,
+export const ButtonIcon = forwardRef<HTMLElement, ButtonIconProps>((
+  { loader, className, ...props },
   ref,
 ) => {
-
-  return (
-    <Slot
-      ref={ref}
-      className={w(
-        "w-5 h-5",
-        className,
-      )}
-      {...props}
-    />
-  );
+  
+  if(loader) {
+    return <ButtonIconClientSide ref={ref} className={className} {...props} />
+  }
+  
+  return <ButtonIconServerSide ref={ref} className={className} {...props} />
 });
 
 ButtonIcon.displayName = 'ButtonIcon';

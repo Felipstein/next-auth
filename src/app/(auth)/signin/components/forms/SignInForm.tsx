@@ -9,6 +9,12 @@ import { Form } from "@/components/common/forms/Form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { signIn, useSession } from "next-auth/react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { PiWarningCircle } from "react-icons/pi";
+import { ErrorFeedback } from "@/components/common/ErrorFeedback";
+import { BiDownArrowCircle } from "react-icons/bi";
 
 const signInSchema = z.object({
   email: z.string()
@@ -23,6 +29,10 @@ const signInSchema = z.object({
 type SignInFormData = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
+  const { push } = useRouter();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const signInForm = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
@@ -33,8 +43,30 @@ export function SignInForm() {
     formState: { isValid }
   } = signInForm;
 
-  function signInRequest(data: SignInFormData) {
+  async function signInRequest({ email, password }: SignInFormData) {
+    setIsLoading(true);
+    
+    const response = await signIn('credentials', { email, password, redirect: false });
 
+    if(response?.error) {
+      setError(response.error);
+    } else {
+      let finalUrl = '/';
+
+      if(response?.url) {
+        const url = new URL(response.url);
+        const callbackUrl = url.searchParams.get('callbackUrl');
+
+        if(callbackUrl) {
+          finalUrl = new URL(callbackUrl).pathname;
+        }
+      }
+
+      push(finalUrl);
+      setError(null);
+    }
+    
+    setIsLoading(false);
   }
 
   return (
@@ -43,6 +75,8 @@ export function SignInForm() {
       onSubmit={signInRequest}
       className="space-y-6"
     >
+      <ErrorFeedback error={error} />
+
       <div className="space-y-5">
         <FieldInput.Root field="email">
           <FieldInput.Label>
@@ -92,7 +126,10 @@ export function SignInForm() {
       <Button
         type="submit"
         disabled={!isValid}
+        loading={isLoading}
       >
+        <Button.Icon loader />
+
         Fazer Login
       </Button>
     </Form>

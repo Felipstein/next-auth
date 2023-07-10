@@ -3,9 +3,10 @@
 import { FaGithub } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { SocialButton } from "./SocialButton";
+import { signIn } from "next-auth/react";
 
 export function ContinueWithFooter() {
-
+  
   return (
     <footer className="flex items-center gap-4">
       <SocialButton
@@ -18,6 +19,7 @@ export function ContinueWithFooter() {
       <SocialButton
         icon={FaGithub}
         className="text-white bg-zinc-800 hover:bg-zinc-950 shadow hover:shadow-md"
+        onClick={() => signIn('github')}
       >
         GitHub
       </SocialButton>

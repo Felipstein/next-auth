@@ -5,8 +5,14 @@ import { LinkText } from "@/components/common/LinkText";
 import { PasswordInputField } from "@/components/common/PasswordInput";
 import { FieldInput } from "@/components/common/forms/FieldInput";
 import { Form } from "@/components/common/forms/Form";
+import { authService } from "@/services/api/auth.service";
+import { APIError } from "@/shared/errors/APIError";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { PiWarningCircle } from "react-icons/pi";
 import { z } from "zod";
 
 const signUpSchema = z.object({
@@ -32,6 +38,10 @@ const signUpSchema = z.object({
 type SignUpFormData = z.infer<typeof signUpSchema>;
 
 export function SignUpForm() {
+  const { push } = useRouter();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const signUpForm = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
@@ -41,8 +51,37 @@ export function SignUpForm() {
     formState: { isValid }
   } = signUpForm;
 
-  function signUpRequest(data: SignUpFormData) {
+  async function signUpRequest({ name, email, password, confirmPassword }: SignUpFormData) {
+    setIsLoading(true);
 
+    try {
+      await authService.signUp({ name, email, password, confirmPassword, });
+
+      const response = await signIn('credentials', { email, password, redirect: false });
+      
+      if(response?.error) {
+        setError(response.error);
+      } else {
+        let finalUrl = '/';
+
+        if(response?.url) {
+          const url = new URL(response.url);
+          const callbackUrl = url.searchParams.get('callbackUrl');
+
+          if(callbackUrl) {
+            finalUrl = new URL(callbackUrl).pathname;
+          }
+        }
+
+        push(finalUrl);
+        setError(null);
+      }
+    } catch (err : APIError | any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+    
   }
 
   return (
@@ -51,6 +90,14 @@ export function SignUpForm() {
       onSubmit={signUpRequest}
       className="space-y-6"
     >
+      {error && (
+        <span className="text-red-500 font-medium text-sm flex items-center gap-1.5">
+          <PiWarningCircle className="w-6 h-6" />
+
+          {error}
+        </span>
+      )}
+
       <div className="space-y-5">
         <FieldInput.Root field="name">
           <FieldInput.Label>
@@ -114,7 +161,10 @@ export function SignUpForm() {
       <Button
         type="submit"
         disabled={!isValid}
+        loading={isLoading}
       >
+        <Button.Icon loader />
+
         Cadastrar
       </Button>
     </Form>

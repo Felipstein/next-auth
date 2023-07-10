@@ -1,26 +1,25 @@
-import { w } from "@/utils/w";
 import { ComponentProps } from "react";
+import { ButtonClientSide } from "./ButtonClientSide";
+import { ButtonServerSide } from "./ButtonServerSide";
 import { ButtonIcon } from "./ButtonIcon";
 
 export interface ButtonProps extends ComponentProps<'button'> {
+  variant?: 'main' | 'no-bg',
+  loading?: boolean,
   defaultShadow?: boolean,
+  asChild?: boolean,
 }
 
-export function Button({ defaultShadow = true, className, ...props }: ButtonProps) {
+export function Button({
+  loading = false,
+  variant = 'main',
+  ...props
+}: ButtonProps) {
+  if(loading) {
+    return <ButtonClientSide loading={loading} variant={variant} {...props} />;
+  }
 
-  return (
-    <button
-      className={w(
-        "w-full flex gap-2 items-center justify-center font-medium text-sm text-white bg-sky-500 hover:bg-sky-600 rounded-md px-4 py-2.5",
-        {
-          "shadow shadow-sky-100 hover:shadow-sky-200": defaultShadow,
-          "pointer-events-none opacity-20 bg-zinc-700 text-zinc-300": props.disabled, 
-        },
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <ButtonServerSide variant={variant} {...props} />
 }
 
 Button.Icon = ButtonIcon;
